@@ -19,6 +19,7 @@ func (sl *SpinLock) get() *int64 {
 	return &sl.owner
 }
 
+// 0 indicates that you will try to lock until you obtain.
 func (sl *SpinLock) SetTryTimes(n int) bool {
 	sl.try_times = n
 	return true
