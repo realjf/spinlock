@@ -18,14 +18,22 @@ func (sl *SpinLock) get() *int64 {
 	return &sl.owner
 }
 
-func (sl *SpinLock) Lock() {
+// true - locked
+// false - unlocked
+func (sl *SpinLock) TryLock() bool {
 	me := GetGoroutineId()
-	if sl.owner == me { // 如果当前线程已经获取到了锁，线程数增加一，然后返回
+	if sl.owner == me {
+		// If the current thread has obtained the lock, increase the number of threads by one, and then return
 		sl.count++
-		return
+		return true
 	}
-	// 如果没获取到锁，则通过CAS自旋
-	for !atomic.CompareAndSwapInt64(sl.get(), 0, me) {
+
+	return atomic.CompareAndSwapInt64(sl.get(), 0, me)
+}
+
+func (sl *SpinLock) Lock() {
+	// If the lock is not obtained, spin it through CAS
+	for !sl.TryLock() {
 		runtime.Gosched()
 	}
 }
@@ -33,9 +41,13 @@ func (sl *SpinLock) Unlock() {
 	if sl.owner != GetGoroutineId() {
 		panic("illegalMonitorStateError")
 	}
-	if sl.count > 0 { // 如果大于0，表示当前线程多次获取了该锁，释放锁通过count减一来模拟
+	if sl.count > 0 {
+		// If it is greater than 0, it means that the current thread has acquired the lock multiple times,\
+		// and releasing the lock is simulated by subtracting count
 		sl.count--
-	} else { // 如果count==0，可以将锁释放，这样就能保证获取锁的次数与释放锁的次数是一致的了。
+	} else {
+		// If count==0, the lock can be released, so that the number of times \
+		// to obtain the lock is consistent with the number of times to release the lock.
 		atomic.StoreInt64(sl.get(), 0)
 	}
 }
