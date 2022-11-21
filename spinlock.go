@@ -10,12 +10,18 @@ import (
 )
 
 type SpinLock struct {
-	owner int64
-	count int
+	owner     int64
+	count     int
+	try_times int // 0 indicates that you will try to lock until you obtain.
 }
 
 func (sl *SpinLock) get() *int64 {
 	return &sl.owner
+}
+
+func (sl *SpinLock) SetTryTimes(n int) bool {
+	sl.try_times = n
+	return true
 }
 
 // true - locked
@@ -33,8 +39,18 @@ func (sl *SpinLock) TryLock() bool {
 
 func (sl *SpinLock) Lock() {
 	// If the lock is not obtained, spin it through CAS
-	for !sl.TryLock() {
-		runtime.Gosched()
+	if sl.try_times > 0 {
+		for loop := 0; loop < sl.try_times; loop++ {
+			if !sl.TryLock() {
+				runtime.Gosched()
+			} else {
+				break
+			}
+		}
+	} else {
+		for !sl.TryLock() {
+			runtime.Gosched()
+		}
 	}
 }
 func (sl *SpinLock) Unlock() {
