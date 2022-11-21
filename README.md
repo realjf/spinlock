@@ -1,4 +1,4 @@
 # spinlock
 
-可重入自旋锁
+reentrant spin lock(可重入自旋锁)
 
