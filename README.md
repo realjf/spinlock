@@ -9,9 +9,13 @@ lock.Lock()
 defer lock.Unlock()
 
 // or
-lock.TryLock()
+if lock.TryLock() {
+    defer lock.Unlock()
+}
 
 // or
 lock.SetTryTimes(2)
-lock.TryLock()
+if lock.TryLock() {
+    defer lock.Unlock()
+}
 ```
