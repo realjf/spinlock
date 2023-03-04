@@ -1,4 +1,4 @@
-module spinlock
+module github.com/realjf/spinlock
 
 go 1.19
 
